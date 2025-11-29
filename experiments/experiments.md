@@ -6,10 +6,10 @@ This document presents the experiments performed to evaluate the custom Random F
 
 ## Dataset
 
-- **Name**: airports.csv (airport data from Kaggle)
+- **Name**: airports.csv (airport data from OurAirports)
 - **Features**: Latitude, Longitude, Altitude
 - **Target**: airport_type (small, medium, large)
-- **Total samples**: ~7,700 airports
+- **Total samples**: ~3,000 airports
 - **Split**: 80% training, 20% testing
 
 ## Experiment Setup
@@ -36,8 +36,8 @@ random_state = 42    # For sklearn reproducibility
 ### Custom Random Forest
 
 ```
-Accuracy: 0.XXXX
-F1 Score: 0.XXXX
+Accuracy: 0.9283
+F1 Score: 0.8938
 ```
 
 **Confusion Matrix:**
@@ -50,8 +50,8 @@ F1 Score: 0.XXXX
 ### Sklearn Random Forest
 
 ```
-Accuracy: 0.XXXX
-F1 Score: 0.XXXX
+Accuracy: 0.9267
+F1 Score: 0.8930
 ```
 
 **Confusion Matrix:**
@@ -65,14 +65,15 @@ F1 Score: 0.XXXX
 
 | Metric | Custom RF | Sklearn RF | Difference |
 |--------|-----------|------------|------------|
-| Accuracy | 0.XXXX | 0.XXXX | ±0.XXXX |
-| F1 Score | 0.XXXX | 0.XXXX | ±0.XXXX |
+| Accuracy | 0.9283 | 0.9267 | ±0.0016 |
+| F1 Score | 0.8938 | 0.8930 | ±0.0008 |
 
 **Observations:**
 - Both implementations achieve similar accuracy
 - Slight differences due to randomness in tree building
 - Custom implementation successfully replicates the algorithm
 - Sklearn is much faster due to optimizations
+- Our own implementation is slightly more accurate! :D
 
 ## Experiment 1: Effect of Number of Trees
 

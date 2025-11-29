@@ -174,8 +174,4 @@ The aim is to clearly show:
 
 ## Author
 
-Student project for Python Programming course, 2025.
-
-## License
-
-Educational project - free to use for learning purposes.
+Student project made by Wojciech Domino & Mateusz Maj for Python Programming course, 2025.
