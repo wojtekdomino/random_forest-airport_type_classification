@@ -4,7 +4,7 @@
 ## Overview
 
 This is a simple, academic project created for the **Python Programming course**.  
-The goal is to implement a **basic Random Forest classifier from scratch**, using a small airport dataset (`flights.csv`) and to compare the results with the official implementation from **scikit-learn**.
+The goal is to implement a **basic Random Forest classifier from scratch**, using a small airport dataset (`airports.csv`) and to compare the results with the official implementation from **scikit-learn**.
 
 The project follows the official course requirements:
 - VirtualEnv  
