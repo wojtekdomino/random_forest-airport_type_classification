@@ -237,6 +237,17 @@ def load_data(filepath='airports.csv'):
     df['airport_category'] = df['type'].map(type_mapping)
     df = df.dropna(subset=['airport_category'])
     
+    # Sample max 3k rows while keeping class proportions
+    if len(df) > 3000:
+        print(f"Sampling 3000 from {len(df)} airports (stratified by type)...")
+        # Use sample with frac parameter for stratified sampling
+        sampled_dfs = []
+        for category in df['airport_category'].unique():
+            cat_df = df[df['airport_category'] == category]
+            n_samples = min(len(cat_df), int(3000 * len(cat_df) / len(df)))
+            sampled_dfs.append(cat_df.sample(n=n_samples, random_state=42))
+        df = pd.concat(sampled_dfs, ignore_index=True)
+    
     # Extract features and target
     X = df[feature_cols].values
     y = df['airport_category'].values
