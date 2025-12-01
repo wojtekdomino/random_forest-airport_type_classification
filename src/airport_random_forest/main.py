@@ -237,16 +237,24 @@ def load_data(filepath='airports.csv'):
     df['airport_category'] = df['type'].map(type_mapping)
     df = df.dropna(subset=['airport_category'])
     
-    # Sample max 3k rows while keeping class proportions
-    if len(df) > 3000:
-        print(f"Sampling 3000 from {len(df)} airports (stratified by type)...")
-        # Use sample with frac parameter for stratified sampling
-        sampled_dfs = []
-        for category in df['airport_category'].unique():
-            cat_df = df[df['airport_category'] == category]
-            n_samples = min(len(cat_df), int(3000 * len(cat_df) / len(df)))
+    # Balanced sampling - max 500 samples per class for faster training
+    # This ensures balanced classes and reasonable training time
+    print(f"Original distribution: {Counter(df['airport_category'])}")
+    
+    sampled_dfs = []
+    max_samples_per_class = 500
+    
+    for category in df['airport_category'].unique():
+        cat_df = df[df['airport_category'] == category]
+        # Take max 500 from each class, or all if less
+        n_samples = min(len(cat_df), max_samples_per_class)
+        if len(cat_df) > n_samples:
             sampled_dfs.append(cat_df.sample(n=n_samples, random_state=42))
-        df = pd.concat(sampled_dfs, ignore_index=True)
+        else:
+            sampled_dfs.append(cat_df)
+    
+    df = pd.concat(sampled_dfs, ignore_index=True).sample(frac=1, random_state=42)  # shuffle
+    print(f"Balanced distribution: {Counter(df['airport_category'])}")
     
     # Extract features and target
     X = df[feature_cols].values
@@ -288,7 +296,7 @@ def main():
     print("Training CUSTOM Random Forest...")
     print("-" * 70)
     
-    custom_rf = SimpleRandomForest(n_estimators=20, max_depth=8, max_features='sqrt')
+    custom_rf = SimpleRandomForest(n_estimators=50, max_depth=10, max_features='sqrt')
     custom_rf.fit(X_train, y_train)
     
     custom_pred = custom_rf.predict(X_test)
@@ -306,8 +314,8 @@ def main():
     print("-" * 70)
     
     sklearn_rf = RandomForestClassifier(
-        n_estimators=20, 
-        max_depth=8, 
+        n_estimators=50, 
+        max_depth=10, 
         max_features='sqrt',
         random_state=42
     )
