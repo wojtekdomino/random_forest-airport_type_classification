@@ -125,13 +125,65 @@ def test_random_features():
     
     print("✓ Random feature selection tests passed")
 
+def experiment1_effect_of_number_of_trees(X_data, y_data):
+    
+    print("\n--- Running Experiment 1: Effect of Number of Trees (5 to 50) ---")
+    
+    # Use only a small sample for quick runtime
+    X = X_data[:50]
+    y = y_data[:50]
+    
+    n_estimators_list = [5, 10, 20, 30, 50]
+    
+    for n in n_estimators_list:
+        # Train and test a minimal Random Forest model
+        rf = SimpleRandomForest(n_estimators=n, max_depth=5)
+        rf.fit(X, y)
+        predictions = rf.predict(X)
+        accuracy = np.mean(predictions == y)
+        print(f"  Trees (n_estimators)={n}: Accuracy={accuracy:.4f}")
+        
+    print(f"Expected Result: Accuracy should generally improve and then stabilize.")
+    print("✓ Experiment 1 completed")
+
+
+def experiment2_impact_of_tree_depth(X_data, y_data):
+    
+    print("\n--- Running Experiment 2: Impact of Tree Depth (3 to 15) ---")
+    
+    X = X_data[:50]
+    y = y_data[:50]
+    
+    depth_list = [3, 6, 10, 15]
+    
+    for d in depth_list:
+        # Train a minimal Random Forest model with varied max_depth
+        rf = SimpleRandomForest(n_estimators=10, max_depth=d)
+        rf.fit(X, y)
+        # Check performance on the training set (X) to observe potential overfitting
+        predictions = rf.predict(X)
+        accuracy = np.mean(predictions == y)
+        print(f"  Max_Depth={d}: Train Accuracy={accuracy:.4f}")
+
+    print(f"Expected Result: Accuracy should increase with depth; high depth (e.g., 15) may hit 1.0 (overfitting).")
+    print("✓ Experiment 2 completed")
+
 
 def run_all_tests():
-    """Run all basic tests"""
+    """Run all basic tests and the first two performance experiments"""
+    
+    # --- Simulated Data Loading (Required for Experiments) ---
+    # Create a simulated dataset for performance tests (100 samples, 3 features, 3 classes)
+    np.random.seed(42)
+    X_simulated = np.random.rand(100, 3) * 100 
+    y_simulated = np.random.randint(0, 3, 100) 
+    # -------------------------------------------------------------------
+    
     print("=" * 60)
     print("Running Basic Tests")
     print("=" * 60)
     
+    # 1. Unit Tests
     test_gini_impurity()
     test_tree_splitting()
     test_bootstrap_sampling()
@@ -139,7 +191,15 @@ def run_all_tests():
     test_random_features()
     
     print("\n" + "=" * 60)
-    print("All tests passed!")
+    print("Running 2 Performance Experiments")
+    print("=" * 60)
+    
+    # 2. Executing Experiments 
+    experiment1_effect_of_number_of_trees(X_simulated, y_simulated)
+    experiment2_impact_of_tree_depth(X_simulated, y_simulated)
+    
+    print("\n" + "=" * 60)
+    print("All Tests and Experiments Concluded!")
     print("=" * 60)
 
 
