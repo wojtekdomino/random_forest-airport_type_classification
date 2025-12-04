@@ -87,16 +87,15 @@ def test_majority_voting():
     """Test majority voting in Random Forest"""
     print("\nTesting majority voting...")
     
-    # Create simple dataset
-    X = np.array([
-        [1, 1],
-        [2, 2],
-        [10, 10],
-        [11, 11]
+    # Create simple dataset (larger for better testing)
+    np.random.seed(42)
+    X = np.vstack([
+        np.random.randn(20, 2) + [0, 0],  # Class 0
+        np.random.randn(20, 2) + [5, 5]   # Class 1
     ])
-    y = np.array([0, 0, 1, 1])
+    y = np.array([0]*20 + [1]*20)
     
-    rf = SimpleRandomForest(n_estimators=5, max_depth=3)
+    rf = SimpleRandomForest(n_estimators=10, max_depth=5)
     rf.fit(X, y)
     
     predictions = rf.predict(X)
@@ -145,8 +144,11 @@ def test_feature_engineering():
     # Check that new features were created
     assert 'abs_latitude' in df_engineered.columns, "abs_latitude should be created"
     assert 'tropical_zone' in df_engineered.columns, "tropical_zone should be created"
-    assert 'is_north_america' in df_engineered.columns, "continent one-hot encoding should exist"
     assert 'scheduled_low_elev' in df_engineered.columns, "interaction features should exist"
+    
+    # Check that redundant features were NOT created
+    assert 'is_north_america' not in df_engineered.columns, "redundant continent one-hot should be removed"
+    assert 'likely_americas' not in df_engineered.columns, "redundant continent approximation should be removed"
     
     # Validate some feature values
     assert df_engineered['abs_latitude'].iloc[0] == 40.0, "abs_latitude should be absolute value"
@@ -166,8 +168,8 @@ def test_data_loading():
         
         # Check dimensions
         assert X.shape[0] > 0, "Should load some samples"
-        assert num_features == 31, f"Should have 31 features, got {num_features}"
-        assert X.shape[1] == 31, f"X should have 31 columns, got {X.shape[1]}"
+        assert num_features == 22, f"Should have 22 features (3 basic + 2 categorical + 17 engineered), got {num_features}"
+        assert X.shape[1] == 22, f"X should have 22 columns, got {X.shape[1]}"
         
         # Check classes
         unique_classes = set(y)
@@ -215,7 +217,7 @@ def test_model_performance():
         print(f"  Accuracy: {accuracy:.4f}")
         
         # Performance threshold - should beat random baseline significantly
-        MIN_F1 = 0.40  # Conservative threshold (random = 0.33)
+        MIN_F1 = 0.60  # Target threshold (80% better than random baseline 0.33)
         assert f1 >= MIN_F1, f"Model F1 ({f1:.4f}) should be >= {MIN_F1}"
         
         # Check all classes are predicted
@@ -335,7 +337,7 @@ def run_all_tests():
     print("✓ All unit tests passed")
     print("✓ Feature engineering validated")
     if data_loaded:
-        print("✓ Model performance meets requirements (F1 >= 0.40)")
+        print("✓ Model performance meets requirements (F1 >= 0.60)")
     print("✓ Experiments completed successfully")
     print("\n" + "=" * 70)
     print("ALL TESTS PASSED!")
