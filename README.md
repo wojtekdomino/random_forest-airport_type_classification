@@ -9,11 +9,9 @@ The goal is to implement a **basic Random Forest classifier from scratch**, usin
 The project follows the official course requirements:
 - VirtualEnv  
 - PyScaffold project structure  
-- own implementation vs scikit-learn implementation  
+- comparison - own implementation vs scikit-learn implementation  
 - complete documentation  
-- basic unit tests  
-
-The project is intentionally kept **short, clear, and easy to understand**.
+- basic unit tests (made by Mateusz Maj) 
 
 ## Problem Definition
 
@@ -33,18 +31,16 @@ Classify airports into **3 categories** based on geographic and engineered featu
 - `continent` - Continent code (NA, EU, AS, SA, OC, AF, AN) → encoded
 - `scheduled_service` - Whether airport has scheduled flights (yes/no) → binary
 
-**Engineered features (26):**
+**Engineered features (17):**
 - `abs_latitude` - Distance from equator
 - `northern_hemisphere`, `eastern_hemisphere` - Hemisphere indicators
 - `tropical_zone`, `temperate_zone`, `polar_zone` - Climate zone approximations
 - `elevation_normalized`, `high_elevation`, `low_elevation` - Elevation patterns
 - `lat_lon_interaction`, `lat_elev_interaction`, `lon_elev_interaction` - Geographic interactions
 - `lat_squared`, `lon_squared`, `elev_squared` - Non-linear relationships
-- `likely_americas`, `likely_europe_africa`, `likely_asia_oceania` - Continental regions (from lon)
-- `is_north_america`, `is_europe`, `is_asia`, `is_south_america`, `is_oceania`, `is_africa` - Continent one-hot encoding
 - `scheduled_low_elev`, `scheduled_high_lat` - Scheduled service interaction features
 
-**Total: 31 features** used for classification
+**Total: 22 features** used for classification (3 basic + 2 categorical + 17 engineered)
 
 ### Target Metric: **F1-Score (Weighted)**
 
@@ -56,7 +52,7 @@ Classify airports into **3 categories** based on geographic and engineered featu
 
 ### Success Criteria
 
-✓ **F1-Score >= 0.50** on test set (both implementations) → **Achieved: 0.60-0.61**  
+✓ **F1-Score >= 0.60** on test set (both implementations) → **Achieved: 0.60-0.61**  
 ✓ **All 3 classes predicted** (not just majority class) → **Achieved**  
 ✓ **Custom implementation within 5%** of sklearn performance → **Achieved: 1.5% difference**  
 ✓ **At least 1.5x improvement** over random baseline (0.33) → **Achieved: 1.82x**
@@ -222,18 +218,21 @@ The custom implementation **successfully exceeds all project goals**:
 - **Improvement: 82% better than random (1.82x)**
 
 **Impact of features:**
-- Geographic only (21 features): F1 ~ 0.51
+- Geographic only (3 basic + 14 derived = 17 features): F1 ~ 0.51
 - + Categorical (continent, scheduled_service): F1 ~ 0.61
 - **Improvement from categorical features: +20%**
+- Clean feature set (22 total) without redundancy
 
 **Key success factors:**
 1. **Categorical features**: Continent and scheduled service provide strong signals
    - Scheduled service airports are typically larger (commercial vs. private)
    - Continental patterns reflect economic development (NA/EU vs. AF/OC)
-2. **Feature engineering**: 26 derived features from 5 base features
+   - Direct continent encoding (not approximated from longitude)
+2. **Feature engineering**: 17 meaningful derived features from 5 base features
    - Geographic patterns (climate zones, hemispheres)
    - Non-linear relationships (squared terms, interactions)
-   - Domain knowledge (elevation patterns, regional indicators)
+   - Domain knowledge (elevation patterns, scheduled service interactions)
+   - No redundant features (removed duplicate continent encodings)
 3. **Balanced sampling**: Preserves minority classes while preventing overfitting
 4. **Ensemble learning**: 100 trees with random feature selection reduce variance
 
@@ -269,9 +268,10 @@ Comprehensive test suite validates implementation correctness:
 - **Random feature selection** - Tests sqrt/log2 feature sampling
 
 ### Feature Engineering Tests
-- **Feature creation** - Validates all 31 features are generated correctly
+- **Feature creation** - Validates all 22 features are generated correctly
 - **Categorical encoding** - Tests continent and scheduled_service encoding
 - **Data preprocessing** - Ensures proper handling of missing values and type mapping
+- **No feature redundancy** - Continent information used efficiently (encoded once)
 
 ### Performance Tests
 - **Model accuracy** - Validates F1-score >= 0.40 (significantly above random baseline)

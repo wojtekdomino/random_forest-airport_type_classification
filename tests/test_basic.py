@@ -60,7 +60,7 @@ def test_tree_splitting():
     predictions = tree.predict(X)
     accuracy = np.mean(predictions == y)
     
-    assert accuracy >= 0.5, f"Tree should classify better than random, got accuracy={accuracy}"
+    assert accuracy >= 0.6, f"Tree should classify better than random, got accuracy={accuracy}"
     
     print("✓ Tree splitting tests passed")
 
@@ -102,7 +102,7 @@ def test_majority_voting():
     predictions = rf.predict(X)
     accuracy = np.mean(predictions == y)
     
-    assert accuracy >= 0.5, f"Random Forest should perform reasonably, got accuracy={accuracy}"
+    assert accuracy >= 0.6, f"Random Forest should perform reasonably, got accuracy={accuracy}"
     
     print("✓ Majority voting tests passed")
 

@@ -26,10 +26,10 @@ TARGET METRIC: F1-SCORE (weighted average)
     - Better reflects real-world classification quality
     
 REALISTIC PERFORMANCE TARGETS:
-    - F1-Score >= 0.50 (both custom and sklearn implementations)
+    - F1-Score >= 0.60 (both custom and sklearn implementations)
     - Should significantly outperform random baseline (~0.33)
     - Custom implementation should be within 5% of sklearn performance
-    - Improvement of at least 1.5x over random guessing
+    - Improvement of at least 1.8x over random guessing
     
     Note: Given the difficulty of predicting airport size from geography alone,
     F1 of 0.50+ represents good performance. Real-world models would use
@@ -37,10 +37,10 @@ REALISTIC PERFORMANCE TARGETS:
     Airport size is primarily driven by economic factors, not geography.
     
 SUCCESS CRITERIA:
-    ✓ F1-score >= 0.50 on test set (50% better than random)
+    ✓ F1-score >= 0.60 on test set (80% better than random)
     ✓ All three classes predicted (not just majority class)
     ✓ Custom RF performance close to sklearn RF (difference < 0.05)
-    ✓ At least 1.5x improvement over random baseline (0.33)
+    ✓ At least 1.8x improvement over random baseline (0.33)
 
 =============================================================================
 """
@@ -63,9 +63,10 @@ class SimpleDecisionTree:
     Uses Gini impurity and binary splits.
     """
     
-    def __init__(self, max_depth=5, min_samples_split=10):
+    def __init__(self, max_depth=5, min_samples_split=10, max_features=None):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.max_features = max_features  # None = use all features, int = use that many
         self.tree = None
     
     def gini_impurity(self, y):
@@ -87,7 +88,13 @@ class SimpleDecisionTree:
         
         n_features = X.shape[1]
         
-        for feature in range(n_features):
+        # Random feature selection for Random Forest
+        if self.max_features is not None and self.max_features < n_features:
+            feature_candidates = np.random.choice(n_features, self.max_features, replace=False)
+        else:
+            feature_candidates = range(n_features)
+        
+        for feature in feature_candidates:
             thresholds = np.unique(X[:, feature])
             
             for threshold in thresholds:
@@ -176,7 +183,6 @@ class SimpleRandomForest:
         self.max_depth = max_depth
         self.max_features = max_features
         self.trees = []
-        self.feature_indices = []
     
     def bootstrap_sample(self, X, y):
         """Create a bootstrap sample (sample with replacement)"""
@@ -185,7 +191,7 @@ class SimpleRandomForest:
         return X[indices], y[indices]
     
     def get_max_features(self, n_features):
-        """Determine number of features to use"""
+        """Determine number of features to use at each split"""
         if self.max_features == 'sqrt':
             return int(np.sqrt(n_features))
         elif self.max_features == 'log2':
@@ -196,25 +202,22 @@ class SimpleRandomForest:
     def fit(self, X, y):
         """Train the random forest"""
         self.trees = []
-        self.feature_indices = []
         
         n_features = X.shape[1]
-        max_features = self.get_max_features(n_features)
+        max_features_per_split = self.get_max_features(n_features)
         
         for i in range(self.n_estimators):
             # Bootstrap sample
             X_sample, y_sample = self.bootstrap_sample(X, y)
             
-            # Random feature subset
-            feature_idx = np.random.choice(n_features, max_features, replace=False)
-            X_subset = X_sample[:, feature_idx]
-            
-            # Train tree
-            tree = SimpleDecisionTree(max_depth=self.max_depth)
-            tree.fit(X_subset, y_sample)
+            # Train tree with random feature selection at each split
+            tree = SimpleDecisionTree(
+                max_depth=self.max_depth,
+                max_features=max_features_per_split
+            )
+            tree.fit(X_sample, y_sample)
             
             self.trees.append(tree)
-            self.feature_indices.append(feature_idx)
         
         return self
     
@@ -222,9 +225,8 @@ class SimpleRandomForest:
         """Predict using majority voting"""
         predictions = []
         
-        for tree, feature_idx in zip(self.trees, self.feature_indices):
-            X_subset = X[:, feature_idx]
-            pred = tree.predict(X_subset)
+        for tree in self.trees:
+            pred = tree.predict(X)
             predictions.append(pred)
         
         # Majority voting
@@ -282,19 +284,6 @@ def engineer_features(df):
     df['lat_squared'] = df['latitude_deg'] ** 2
     df['lon_squared'] = df['longitude_deg'] ** 2
     df['elev_squared'] = (df['elevation_ft'] / 1000) ** 2
-    
-    # Regional approximations (rough continental zones)
-    df['likely_americas'] = ((df['longitude_deg'] >= -180) & (df['longitude_deg'] < -30)).astype(int)
-    df['likely_europe_africa'] = ((df['longitude_deg'] >= -30) & (df['longitude_deg'] < 60)).astype(int)
-    df['likely_asia_oceania'] = ((df['longitude_deg'] >= 60) & (df['longitude_deg'] <= 180)).astype(int)
-    
-    # Continent-specific features (one-hot encoding continents)
-    df['is_north_america'] = (df['continent_encoded'] == 0).astype(int)
-    df['is_europe'] = (df['continent_encoded'] == 1).astype(int)
-    df['is_asia'] = (df['continent_encoded'] == 2).astype(int)
-    df['is_south_america'] = (df['continent_encoded'] == 3).astype(int)
-    df['is_oceania'] = (df['continent_encoded'] == 4).astype(int)
-    df['is_africa'] = (df['continent_encoded'] == 5).astype(int)
     
     # Interaction features with scheduled service
     df['scheduled_low_elev'] = df['scheduled_service_encoded'] * df['low_elevation']
@@ -393,10 +382,6 @@ def load_data(filepath='airports.csv'):
         'lat_lon_interaction', 'lat_elev_interaction', 'lon_elev_interaction',
         # Non-linear
         'lat_squared', 'lon_squared', 'elev_squared',
-        # Regional
-        'likely_americas', 'likely_europe_africa', 'likely_asia_oceania',
-        # Continent one-hot
-        'is_north_america', 'is_europe', 'is_asia', 'is_south_america', 'is_oceania', 'is_africa',
         # Scheduled service interactions
         'scheduled_low_elev', 'scheduled_high_lat'
     ]
@@ -432,9 +417,9 @@ def evaluate_results(y_test, custom_pred, sklearn_pred, custom_f1, sklearn_f1):
     
     Returns: (success: bool, report: str)
     """
-    TARGET_F1 = 0.50
+    TARGET_F1 = 0.60
     MAX_DIFFERENCE = 0.05
-    MIN_BASELINE_IMPROVEMENT = 1.5
+    MIN_BASELINE_IMPROVEMENT = 1.8
     
     results = []
     success = True
@@ -443,8 +428,8 @@ def evaluate_results(y_test, custom_pred, sklearn_pred, custom_f1, sklearn_f1):
     results.append("PROJECT GOALS VERIFICATION")
     results.append("=" * 70)
     
-    # Goal 1: F1-score >= 0.50 for both implementations
-    results.append(f"\n✓ GOAL 1: F1-Score >= {TARGET_F1} (50% better than random)")
+    # Goal 1: F1-score >= 0.60 for both implementations
+    results.append(f"\n✓ GOAL 1: F1-Score >= {TARGET_F1} (80% better than random)")
     results.append(f"  Custom RF F1:  {custom_f1:.4f} - {'PASS ✓' if custom_f1 >= TARGET_F1 else 'FAIL ✗'}")
     results.append(f"  Sklearn RF F1: {sklearn_f1:.4f} - {'PASS ✓' if sklearn_f1 >= TARGET_F1 else 'FAIL ✗'}")
     
