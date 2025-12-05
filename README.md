@@ -274,7 +274,7 @@ Comprehensive test suite validates implementation correctness:
 - **No feature redundancy** - Continent information used efficiently (encoded once)
 
 ### Performance Tests
-- **Model accuracy** - Validates F1-score >= 0.40 (significantly above random baseline)
+- **Model accuracy** - Validates F1-score >= 0.60 (above random baseline)
 - **Class coverage** - Ensures all 3 classes are predicted
 - **Real data validation** - Tests on actual airport dataset (1,486 samples)
 
@@ -298,7 +298,7 @@ python tests/test_basic.py
 **Test Results:**
 - All unit tests: ✓ PASS
 - Feature engineering: ✓ PASS
-- Model performance: ✓ PASS (F1 = 0.60, well above 0.40 threshold)
+- Model performance: ✓ PASS (F1 = 0.61, above 0.60 threshold)
 - Experiments: ✓ PASS
 
 Tests are implemented in: `/tests/test_basic.py`
